@@ -14,12 +14,13 @@ class GetCommentData:
         # 评论请求地址
         self.url_list = ['https://api-love.qingteng-inc.com/moment/get_moment_detail',
                          'https://api-love.qingteng-inc.com/moment/get_comments_list']
-        self.moment_info_lst = []
-        self.comment_info_lst = []
 
     def response(self, flow):
         # 拦截请求，如果为评论请求，则获取评论内容
         if flow.request.url in self.url_list:
+
+            moment_info_lst = []
+            comment_info_lst = []
 
             # 获取投票id
             res_body = flow.request.get_text()
@@ -32,14 +33,15 @@ class GetCommentData:
             moment_info, comment_list = self.extract_data(res_json, moment_id)
 
             if moment_info is not None:
-                self.moment_info_lst.append(moment_info)
+                moment_info_lst.append(moment_info)
 
-            self.comment_info_lst.append(comment_list)
+            comment_info_lst.append(comment_list)
 
             # 保存数据
-            self.sava_data()
+            self.sava_data(moment_info_lst, comment_info_lst)
 
-    def sava_data(self):
+    @staticmethod
+    def sava_data(moment_info_lst, comment_info_lst):
         try:
             df_moment_info = pd.read_csv('../data/moment_info.csv')
         except FileNotFoundError:
@@ -50,10 +52,10 @@ class GetCommentData:
         except FileNotFoundError:
             df_comment_info = pd.DataFrame()
 
-        df_moment = pd.DataFrame(self.moment_info_lst).drop_duplicates(subset=['moment_id'])
+        df_moment = pd.DataFrame(moment_info_lst).drop_duplicates(subset=['moment_id'])
 
         df_comment = pd.DataFrame()
-        for comment_info in self.comment_info_lst:
+        for comment_info in comment_info_lst:
             df_temp = pd.DataFrame(comment_info)
             df_comment = pd.concat([df_comment, df_temp])
 
